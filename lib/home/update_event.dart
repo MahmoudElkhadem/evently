@@ -1,9 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:evently/home/taps/home_tab/custom_tab_widget.dart';
 import 'package:evently/l10n/app_localizations.dart';
 import 'package:evently/model/event_model.dart';
 import 'package:evently/providers/app_theme_provider.dart';
-import 'package:evently/utils/app_assets.dart';
 import 'package:evently/utils/app_color.dart';
 import 'package:evently/utils/app_style.dart';
 import 'package:evently/utils/dialog_utils.dart';
@@ -23,39 +20,73 @@ class UpdateEvent extends StatefulWidget {
 }
 
 class _UpdateEventState extends State<UpdateEvent> {
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController =
+  TextEditingController();
+
+  late EventModel event;
 
   int selectedIndex = 0;
-  late String selectedTimeText = AppLocalizations.of(context)!.chooseTime;
-  late String? selectedDateText = AppLocalizations.of(context)!.chooseDate;
-  var formKey = GlobalKey<FormState>();
-  var title = '';
-  var description = '';
-  String selectedEventImage = '';
-  String selectedEventName = '';
+
   DateTime? selectDate;
   DateTime? selectedDateTime;
 
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
+  String selectedDateText = '';
+  String selectedTimeText = '';
+
+  String selectedEventImage = '';
+  String selectedEventName = '';
+
+  bool isInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final event =
-    ModalRoute.of(context)!.settings.arguments as EventModel;
+    if (isInitialized) return;
+
+    event = ModalRoute.of(context)!.settings.arguments as EventModel;
 
     titleController.text = event.eventTitle;
     descriptionController.text = event.eventDescription;
+
+    selectedIndex = (event.eventCategoryIndex ?? 1) - 1;
+
+    selectDate = event.dateTime;
+    selectedDateTime = event.dateTime;
+
+    selectedDateText = DateFormat(
+      'dd MMMM',
+    ).format(event.dateTime);
+
+    selectedTimeText = DateFormat(
+      'hh:mm a',
+    ).format(event.dateTime);
+
+    selectedEventImage = event.eventImage;
+    selectedEventName = event.eventName;
+
+    isInitialized = true;
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    var height = context.height;
-    var width = context.width;
+    final height = context.height;
+    final width = context.width;
 
-    List<String> eventNameList = [
+    final themeProvider =
+        Provider.of<AppThemeProvider>(context).appTheme;
+
+    final eventNameList = [
       AppLocalizations.of(context)!.sport,
       AppLocalizations.of(context)!.bookClub,
       AppLocalizations.of(context)!.exhibition,
@@ -63,317 +94,444 @@ class _UpdateEventState extends State<UpdateEvent> {
       AppLocalizations.of(context)!.birthday,
     ];
 
-
-
-    List<IconData> icons = [
+    final icons = [
       Icons.directions_bike,
       Icons.menu_book_outlined,
       Icons.museum,
       Icons.meeting_room_outlined,
-      Icons.cake_outlined
+      Icons.cake_outlined,
     ];
 
-    List<String> eventImageLight = [
-      AppAssets.sportImageLight,
-      AppAssets.bookClubImageLight,
-      AppAssets.exhibitionImageLight,
-      AppAssets.meetingImageLight,
-      AppAssets.birthdayImageLight
-    ];
-
-    List<String> eventImageDark = [
-      AppAssets.sportImageDark,
-      AppAssets.bookClubImageDark,
-      AppAssets.exhibitionImageDark,
-      AppAssets.meetingImageDark,
-      AppAssets.birthdayImageDark
-    ];
-
-
-    var themeProvider = Provider.of<AppThemeProvider>(context).appTheme;
-
-    Future<void> chooseTime(BuildContext context) async {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-      );
-
-      if (pickedTime != null) {
-        final now = DateTime.now();
-
-        setState(() {
-          selectedDateTime = DateTime(
-            now.year,
-            now.month,
-            now.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-
-          selectedTimeText = pickedTime.format(context);
-        });
-      }
-    }
-
-
-    Future<void> chooseDate(BuildContext context) async {
-      final DateTime? pickedDate = await showDatePicker(
-        context: context,
-        initialDate: DateTime.now(),
-        firstDate: DateTime.now(),
-        lastDate: DateTime.now().add(
-            const Duration(days: 365)),
-      );
-
-      if (pickedDate != null) {
-        setState(() {
-          selectedDateText = DateFormat('yyyy/MM/dd').format(pickedDate);
-          selectDate = pickedDate;
-        });
-      }
-    }
-    selectedEventImage =  themeProvider.isLight ? eventImageLight[selectedIndex] : eventImageDark[selectedIndex];
-
-    selectedEventName = eventNameList[selectedIndex];
     return Scaffold(
-        body: SafeArea(
-            child: Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: height*0.02,
-                  horizontal: width*0.04,
-                ),
-                child: Form(
-                  key: formKey,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      spacing: 5,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: (){
-                                Navigator.pop(context);
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: themeProvider.isLight ? AppColor.inputsLightMode
-                                        : AppColor.backgroundDarkMode,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                        color: themeProvider.isLight ? AppColor.strokeLightMode
-                                            : AppColor.strokeDarkMode
-                                    )
-                                ),
-                                child: Icon(Icons.arrow_back_ios_new,
-                                  color: themeProvider.isLight ? AppColor.mainLightMode
-                                      : AppColor.inputsLightMode,
-                                ),
-                              ),
-                            ),
-                            Spacer(),
-                            Text(AppLocalizations.of(context)!.editEvent,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
-                            SizedBox(width: width*0.35,)
-                          ],
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(top: 16,bottom: 16),
-                          height: height*0.24,
-                          width: double.infinity,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: height * 0.02,
+            horizontal: width * 0.04,
+          ),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 15,
+                children: [
+
+                  // App Bar
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            image: DecorationImage(
-                                image: AssetImage(
-                                    selectedEventImage
-                                ),
-                                fit: BoxFit.fill
+                            color: themeProvider.isLight
+                                ? AppColor.inputsLightMode
+                                : AppColor.backgroundDarkMode,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: themeProvider.isLight
+                                  ? AppColor.strokeLightMode
+                                  : AppColor.strokeDarkMode,
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 40,
-                          child: ListView.separated(
-                              separatorBuilder: (context, index) =>  SizedBox(width:5,),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: eventNameList.length,
-                              itemBuilder: (context, index) => InkWell(
-                                onTap: (){
-                                  selectedIndex = index;
-                                  setState(() {
-
-                                  });
-                                },
-                                child: CustomTabWidget(
-                                  icon: icons[index],
-                                  isSelected: selectedIndex == index,
-                                  eventName: eventNameList[index],
-                                ),
-                              )
+                          child: Icon(
+                            Icons.arrow_back_ios_new,
+                            color: themeProvider.isLight
+                                ? AppColor.mainLightMode
+                                : AppColor.inputsLightMode,
                           ),
                         ),
-                        Text(
-                          AppLocalizations.of(context)!.title,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        CustomTextField(
-                          borderColor: Theme.of(context).dividerColor,
-                          hintText: AppLocalizations.of(context)!.eventTitle,
-                          hintStyle: AppStyle.regular14GreyColor,
-                          fillColor: themeProvider.isDark ? AppColor.inputsDarkMode: AppColor.inputsLightMode,
-                          filled: true,
-                          onChanged: (text){
-                            title = text!;
-                          },
-                          validator: (text) {
-                            if(text == null || text.trim().isEmpty){
-                              return "Please Enter Event Title";
-                            }
-                            return null;
-                          },
-                        ),
-                        Text(AppLocalizations.of(context)!.description,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        CustomTextField(
-                          borderColor: Theme.of(context).dividerColor,
-                          hintText: AppLocalizations.of(context)!.eventDescription,
-                          hintStyle: AppStyle.regular14GreyColor,
-                          fillColor: themeProvider.isDark ? AppColor.inputsDarkMode: AppColor.inputsLightMode,
-                          filled: true,
-                          maxLines: 5,
-                          onChanged: (text){
-                            description = text!;
-                          },
-                          validator: (text) {
-                            if(text == null || text.trim().isEmpty){
-                              return "Please Enter Event Description";
-                            }
-                            return null;
-                          },
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.date_range_rounded,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            Text(
-                              AppLocalizations.of(context)!.eventDate,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
-                            Spacer(),
-                            TextButton(
-                              onPressed: (){
-                                chooseDate(context);
-                              },
-                              child: Text(
-                                selectedDateText!,
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  fontSize: 14,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time_outlined,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            Text(
-                              AppLocalizations.of(context)!.eventTime,
-                              style: Theme.of(context).textTheme.headlineMedium,
-                            ),
-                            Spacer(),
-                            TextButton(
-                              onPressed: () async {
-                                chooseTime(context);
-                              },
-                              child: Text(
-                                selectedTimeText,
-                                style: TextStyle(
-                                  decoration: TextDecoration.underline,
-                                  fontSize: 14,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            )
-                          ],
-                        ),
-                        CustomElevatedButton(
-                            onPressed:  (){
-                              // update Event
+                      ),
 
-                            },
-                            text: AppLocalizations.of(context)!.updateEvent,
-                            isImage: false,
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: AppColor.inputsLightMode)
-                      ],
+                      const Spacer(),
+
+                      Text(
+                        AppLocalizations.of(context)!.updateEvent,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium,
+                      ),
+
+                      const Spacer(),
+
+                      const SizedBox(width: 40),
+                    ],
+                  ),
+
+                  // Event Image
+                  Container(
+                    height: height * 0.24,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      image: DecorationImage(
+                        image: AssetImage(selectedEventImage),
+                        fit: BoxFit.fill,
+                      ),
                     ),
                   ),
-                )
-            )
-        )
-    );
-  }
 
-  void addEvent(){
-    final docRef = FirebaseFirestore.instance
-        .collection(EventModel.eventCollectionName)
-        .doc();
+                  // Event Category
+                  Text(
+                    AppLocalizations.of(context)!.title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall,
+                  ),
 
-    if(formKey.currentState!.validate() == true){
-      // شغل الشغل يا ريس
-      FirebaseUtils.addEventInFireStore(
-          EventModel(
-            eventID: docRef.id,
-            eventImage: selectedEventImage,
-            eventName: selectedEventName,
-            eventTitle: title,
-            eventDescription: description,
-            eventCategoryIndex: selectedIndex+1,
-            dateTime: DateTime(
-              selectDate!.year,
-              selectDate!.month,
-              selectDate!.day,
-              selectedDateTime!.hour,
-              selectedDateTime!.minute,
-            ),
-          )).then(
-              (value) {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(
-              snackBarAnimationStyle: AnimationStyle(duration: Duration(milliseconds: 500)),
-              SnackBar(
-                content: Text(
-                  AppLocalizations.of(context)!.newEventHasBeenAdded,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                backgroundColor: Theme.of(context).primaryColor,
+                  SizedBox(
+                    height: 55,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: eventNameList.length,
+                      separatorBuilder: (_, __) =>
+                      const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              selectedIndex = index;
+                              selectedEventName =
+                              eventNameList[index];
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: selectedIndex == index
+                                  ? Theme.of(context).primaryColor
+                                  : themeProvider.isLight
+                                  ? AppColor.inputsLightMode
+                                  : AppColor.backgroundDarkMode,
+                              borderRadius:
+                              BorderRadius.circular(12),
+                              border: Border.all(
+                                color: selectedIndex == index
+                                    ? Theme.of(context)
+                                    .primaryColor
+                                    : themeProvider.isLight
+                                    ? AppColor.strokeLightMode
+                                    : AppColor.strokeDarkMode,
+                              ),
+                            ),
+                            child: Row(
+                              spacing: 6,
+                              children: [
+                                Icon(
+                                  icons[index],
+                                  color: selectedIndex == index
+                                      ? AppColor.inputsLightMode
+                                      : Theme.of(context)
+                                      .primaryColor,
+                                ),
+                                Text(
+                                  eventNameList[index],
+                                  style: TextStyle(
+                                    color: selectedIndex == index
+                                        ? AppColor.inputsLightMode
+                                        : Theme.of(context)
+                                        .primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Title
+                  Text(
+                    'Event Title',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall,
+                  ),
+
+                  CustomTextField(
+                    controller: titleController,
+                    borderColor:
+                    Theme.of(context).dividerColor,
+                    hintText:
+                    AppLocalizations.of(context)!.eventTitle,
+                    hintStyle:
+                    AppStyle.regular14GreyColor,
+                    fillColor: themeProvider.isDark
+                        ? AppColor.inputsDarkMode
+                        : AppColor.inputsLightMode,
+                    filled: true,
+                    onChanged: (text) {},
+                    validator: (text) {
+                      if (text == null ||
+                          text.trim().isEmpty) {
+                        return 'Please Enter Event Title';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  // Date
+                  Text(
+                    AppLocalizations.of(context)!.eventDate,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall,
+                  ),
+
+                  InkWell(
+                    onTap: () async {
+                      final pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate:
+                        selectDate ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (pickedDate == null) return;
+
+                      setState(() {
+                        selectDate = pickedDate;
+
+                        final oldTime =
+                            selectedDateTime ??
+                                event.dateTime;
+
+                        selectedDateTime = DateTime(
+                          pickedDate.year,
+                          pickedDate.month,
+                          pickedDate.day,
+                          oldTime.hour,
+                          oldTime.minute,
+                        );
+
+                        selectedDateText = DateFormat(
+                          'dd MMMM',
+                        ).format(pickedDate);
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isLight
+                            ? AppColor.inputsLightMode
+                            : AppColor.backgroundDarkMode,
+                        borderRadius:
+                        BorderRadius.circular(8),
+                        border: Border.all(
+                          color: themeProvider.isLight
+                              ? AppColor.strokeLightMode
+                              : AppColor.strokeDarkMode,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_month_outlined,
+                            color: Theme.of(context)
+                                .primaryColor,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            selectedDateText,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Time
+                  Text(
+                    AppLocalizations.of(context)!.eventTime,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall,
+                  ),
+
+                  InkWell(
+                    onTap: () async {
+                      final pickedTime =
+                      await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(
+                          selectedDateTime ??
+                              event.dateTime,
+                        ),
+                      );
+
+                      if (pickedTime == null) return;
+
+                      final date =
+                          selectDate ?? event.dateTime;
+
+                      setState(() {
+                        selectedDateTime = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          pickedTime.hour,
+                          pickedTime.minute,
+                        );
+
+                        selectedTimeText =
+                            pickedTime.format(context);
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isLight
+                            ? AppColor.inputsLightMode
+                            : AppColor.backgroundDarkMode,
+                        borderRadius:
+                        BorderRadius.circular(8),
+                        border: Border.all(
+                          color: themeProvider.isLight
+                              ? AppColor.strokeLightMode
+                              : AppColor.strokeDarkMode,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            color: Theme.of(context)
+                                .primaryColor,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            selectedTimeText,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Description
+                  Text(
+                    'Event Description',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall,
+                  ),
+
+                  CustomTextField(
+                    controller: descriptionController,
+                    borderColor:
+                    Theme.of(context).dividerColor,
+                    hintText: AppLocalizations.of(context)!
+                        .eventDescription,
+                    hintStyle:
+                    AppStyle.regular14GreyColor,
+                    fillColor: themeProvider.isDark
+                        ? AppColor.inputsDarkMode
+                        : AppColor.inputsLightMode,
+                    filled: true,
+                    maxLines: 5,
+                    onChanged: (text) {},
+                    validator: (text) {
+                      if (text == null ||
+                          text.trim().isEmpty) {
+                        return 'Please Enter Event Description';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Update Button
+                  CustomElevatedButton(
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) {
+                        return;
+                      }
+
+                      final date =
+                          selectDate ?? event.dateTime;
+
+                      final time =
+                          selectedDateTime ?? event.dateTime;
+
+                      final updatedEvent = EventModel(
+                        // مهم جدًا: نفس الـ ID القديم
+                        eventID: event.eventID,
+
+                        eventImage: selectedEventImage,
+
+                        eventName: selectedEventName,
+
+                        eventTitle:
+                        titleController.text.trim(),
+
+                        eventDescription:
+                        descriptionController.text.trim(),
+
+                        eventCategoryIndex:
+                        selectedIndex + 1,
+
+                        dateTime: DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        ),
+
+                        // نحافظ على الـ Favorite القديم
+                        isFavorite: event.isFavorite,
+                      );
+
+                      try {
+                        await FirebaseUtils.updateEvent(
+                          updatedEvent,
+                        );
+
+                        if (!context.mounted) return;
+
+                        Navigator.pop(context);
+                      } catch (error) {
+                        if (!context.mounted) return;
+
+                        DialogUtils.showMessage(
+                          context: context,
+                          text: error.toString(),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        );
+                      }
+                    },
+                    text: 'Update Event',
+                    isImage: false,
+                    backgroundColor:
+                    Theme.of(context).primaryColor,
+                    foregroundColor:
+                    AppColor.inputsLightMode,
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
               ),
-            );
-          }
-      ).catchError((error) {
-        DialogUtils.showMessage(
-            context: context,
-            text: error.toString(),
-            onPressed: (){
-              Navigator.pop(context);
-              setState(() {
-
-              });
-            });
-      });
-    }
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

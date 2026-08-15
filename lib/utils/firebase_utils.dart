@@ -87,4 +87,11 @@ class FirebaseUtils {
         .delete();
   }
 
+
+  static Future<void> updateEvent(EventModel event) async {
+    await getEventCollection()
+        .doc(event.eventID)
+        .set(event);
+  }
+
 }

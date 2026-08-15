@@ -73,9 +73,11 @@ class _EventItemWidgetState extends State<EventItemWidget> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             snackBarAnimationStyle: AnimationStyle(duration: Duration(milliseconds: 500)),
                             SnackBar(
-                              content: Text(
-                                AppLocalizations.of(context)!.newEventHasBeenAdded,
-                                style: Theme.of(context).textTheme.titleSmall,
+                              content: Center(
+                                child: Text(
+                                  AppLocalizations.of(context)!.updateEvent,
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
                               ),
                               backgroundColor: Theme.of(context).primaryColor,
                             ),
@@ -100,7 +102,7 @@ class _EventItemWidgetState extends State<EventItemWidget> {
                         color: AppColor.redColor
                       ) :
                       Icon(Icons.favorite_border_outlined,
-                        color: AppColor.inputsLightMode,
+                        color: Theme.of(context).primaryColor,
                       )
                     ),
                   ],
